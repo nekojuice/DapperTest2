@@ -55,21 +55,9 @@ namespace DapperTest2.Controllers
                 string sql = @"INSERT INTO 
                     Customers(CustomerID,CompanyName,ContactName,ContactTitle,Address,City,Region,PostalCode,Country,Phone,Fax) 
                     VALUES (@CustomerID,@CompanyName,@ContactName,@ContactTitle,@Address,@City,@Region,@PostalCode,@Country,@Phone,@Fax)";
-                var para = new DynamicParameters();
-                para.Add("CustomerID", c.CustomerID);
-                para.Add("CompanyName", c.CompanyName);
-                para.Add("ContactName", c.ContactName);
-                para.Add("ContactTitle", c.ContactTitle);
-                para.Add("Address", c.Address);
-                para.Add("City", c.City);
-                para.Add("Region", c.Region);
-                para.Add("PostalCode", c.PostalCode);
-                para.Add("Country", c.Country);
-                para.Add("Phone", c.Phone);
-                para.Add("Fax", c.Fax);
                 try
                 {
-                    await conn.ExecuteAsync(sql, para);
+                    await conn.ExecuteAsync(sql, c);
                     await conn.CloseAsync();
                     return Created(Url.Content("~/api/[controller]"), new ResponseMessage()
                     {
