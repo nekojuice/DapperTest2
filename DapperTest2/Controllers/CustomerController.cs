@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using DapperTest2.Model;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 
@@ -13,21 +14,37 @@ namespace DapperTest2.Controllers
         private string _connectString = @"Server=.;Database=Northwind;Trusted_Connection=True;TrustServerCertificate=true;";
 
         [HttpGet]
-        [Route("{id?}")]
-        async public Task<IEnumerable<Customers>> GET(string? CustomerID)
+        [Route("{CustomerID?}")]
+        async public Task<IActionResult> GET(string? CustomerID)
         {
-            using (SqlConnection conn = new SqlConnection(_connectString))
+            try
             {
-                string sql = @"SELECT * FROM Customers";
-                if (!string.IsNullOrEmpty(CustomerID))
+                using (SqlConnection conn = new SqlConnection(_connectString))
                 {
-                    sql += " WHERE CustomerID = @ID";
+                    string sql = @"SELECT * FROM Customers";
                     var para = new DynamicParameters();
-                    para.Add("@ID", CustomerID);
-                    return await conn.QueryAsync<Customers>(sql, para);
+                    if (!string.IsNullOrEmpty(CustomerID))
+                    {
+                        sql += " WHERE CustomerID = @CustomerID";
+                        para.Add("@CustomerID", CustomerID);
+                    }
+                    return Ok(new ResponseMessage()
+                    {
+                        Status = "success",
+                        Message = "已回傳資料",
+                        Data = await conn.QueryAsync<Customers>(sql, para)
+                    });
                 }
-                return await conn.QueryAsync<Customers>(sql);
             }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ResponseMessage()
+                {
+                    Status = "error",
+                    Message = "發生嚴重錯誤"
+                });
+            }
+
         }
 
         [HttpPost]
@@ -54,11 +71,19 @@ namespace DapperTest2.Controllers
                 {
                     await conn.ExecuteAsync(sql, para);
                     await conn.CloseAsync();
-                    return Ok();
+                    return Created(Url.Content("~/api/[controller]"), new ResponseMessage()
+                    {
+                        Status = "success",
+                        Message = "資料已新增"
+                    });
                 }
                 catch (Exception)
                 {
-                    return BadRequest();
+                    return BadRequest(new ResponseMessage()
+                    {
+                        Status = "error",
+                        Message = "發生錯誤，資料新增失敗"
+                    });
                 }
 
             }
@@ -81,27 +106,24 @@ namespace DapperTest2.Controllers
                 Phone=@Phone,
                 Fax=@Fax 
                 WHERE CustomerID = @CustomerID";
-                var para = new DynamicParameters();
-                para.Add("CustomerID", c.CustomerID);
-                para.Add("CompanyName", c.CompanyName);
-                para.Add("ContactName", c.ContactName);
-                para.Add("ContactTitle", c.ContactTitle);
-                para.Add("Address", c.Address);
-                para.Add("City", c.City);
-                para.Add("Region", c.Region);
-                para.Add("PostalCode", c.PostalCode);
-                para.Add("Country", c.Country);
-                para.Add("Phone", c.Phone);
-                para.Add("Fax", c.Fax);
+
                 try
                 {
-                    await conn.ExecuteAsync(sql, para);
+                    await conn.ExecuteAsync(sql, c);
                     await conn.CloseAsync();
-                    return Ok();
+                    return Ok(new ResponseMessage()
+                    {
+                        Status = "success",
+                        Message = "資料已修改"
+                    });
                 }
                 catch (Exception)
                 {
-                    return BadRequest();
+                    return BadRequest(new ResponseMessage()
+                    {
+                        Status = "error",
+                        Message = "發生錯誤，資料新增失敗"
+                    });
                 }
             }
         }
@@ -118,13 +140,28 @@ namespace DapperTest2.Controllers
                 {
                     await conn.ExecuteAsync(sql, para);
                     await conn.CloseAsync();
-                    return Ok();
+                    return Ok(new ResponseMessage()
+                    {
+                        Status = "success",
+                        Message = "資料已刪除"
+                    });
                 }
                 catch (Exception)
                 {
-                    return BadRequest();
+                    return BadRequest(new ResponseMessage()
+                    {
+                        Status = "error",
+                        Message = "發生錯誤，資料刪除失敗"
+                    });
                 }
             }
         }
+    }
+
+    public class ResponseMessage
+    {
+        public string Status { get; set; }
+        public string Message { get; set; }
+        public dynamic? Data { get; set; }
     }
 }
