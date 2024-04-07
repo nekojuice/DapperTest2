@@ -44,7 +44,6 @@ namespace DapperTest2.Controllers
                     Message = "發生嚴重錯誤"
                 });
             }
-
         }
 
         [HttpPost]

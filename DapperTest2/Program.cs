@@ -1,9 +1,11 @@
 using DapperTest2.Connection;
+using DapperTest2.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddApplication().AddInfrastructure();
+builder.Services.AddScoped<ICustomersRepository, CustomersRepository>();
 
 builder.Services.AddControllers();
 
